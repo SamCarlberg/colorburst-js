@@ -1,13 +1,6 @@
 let filled = [];
 let usedColors = new Set();
 
-function reset() {
-  const {canvas, context} = canvasContext();
-  context.clearRect(0, 0, canvas.width, canvas.height);
-  filled = [];
-  usedColors = new Set();
-}
-
 function start() {
   const {canvas, _} = canvasContext();
   const colors = buildColors(canvas.width, canvas.height);
