@@ -24,7 +24,7 @@ function start() {
   const renderer = new Renderer(colors, seedAnchor);
 
   let callback = () => {
-    const MAX_ITERATIONS_PER_UPDATE = 128;
+    const MAX_ITERATIONS_PER_UPDATE = 1024;
     let i = 0;
     while (renderer.anchors.length > 0 && i++ < MAX_ITERATIONS_PER_UPDATE) {
       renderer.renderPass();
