@@ -420,7 +420,7 @@ class Anchor extends Equatable {
         let x = cx + i;
         let y = cy + j;
 
-        if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.width) {
+        if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) {
           continue;
         }
 
