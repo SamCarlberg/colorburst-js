@@ -1,0 +1,19 @@
+<head>
+    <title>Colorburst</title>
+    <link rel="stylesheet" href="index.css">
+	<script src="index.js"></script>
+</head>
+<body>
+	<div style="text-align: center;">
+		<h1>Colorburst</h1>
+		<canvas id="main_canvas" width="256" height="256" >
+
+		</canvas>
+		<div id="footer" style="text-align: left;">
+			<input type="number" id="width_field" min="1" max="4096" value="256"/>
+			<input type="number" id="height_field" min="1" max="4096" value="256"/>
+			<button id="draw" onclick="resetAndStart()">Draw</button>
+			<button id="reset" onclick="reset()">Reset</button>
+		</div>
+	</div>
+</body>
