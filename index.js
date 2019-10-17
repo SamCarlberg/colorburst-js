@@ -1,7 +1,14 @@
 let filled = [];
 let usedColors = new Set();
+let animationHandle = null;
 
 function start() {
+  // Cancel prior execution
+  if (animationHandle !== null) {
+    console.log(`Cancelling prior animation ${animationHandle}`);
+    window.cancelAnimationFrame(animationHandle);
+  }
+
   const {canvas, _} = canvasContext();
   const colors = buildColors(canvas.width, canvas.height);
   filled = new Array(canvas.width);
@@ -23,10 +30,11 @@ function start() {
       renderer.renderPass();
     }
     if (renderer.anchors.length > 0) {
-      window.requestAnimationFrame(callback);
+      animationHandle = window.requestAnimationFrame(callback);
     }
   };
-  window.requestAnimationFrame(callback);
+
+  animationHandle = window.requestAnimationFrame(callback);
 }
 
 function setColor(xy, rgb) {
