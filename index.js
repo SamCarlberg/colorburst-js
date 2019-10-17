@@ -219,7 +219,7 @@ class ColorSpace {
     const b = Math.floor(rgb.b / this.colorSkip + 1);
 
     for (let i = 1; i < dim; i++) {
-      const max = (i * 2) + 1;
+      const max = Math.min(this.colorDepth, (i * 2) + 1);
 
       const clamp = function (value) {
         return Math.min(arr.length - 1, Math.max(0, Math.min(Math.floor(value - max / 2), dim - 1)));
