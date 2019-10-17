@@ -1,10 +1,7 @@
-console.log('Loading index.js');
-
 let filled = [];
 let usedColors = new Set();
 
 function reset() {
-  console.log('Resetting canvas');
   const {canvas, context} = canvasContext();
   context.clearRect(0, 0, canvas.width, canvas.height);
   filled = [];
@@ -12,7 +9,6 @@ function reset() {
 }
 
 function start() {
-  console.log('Starting drawing');
   const {canvas, _} = canvasContext();
   const colors = buildColors(canvas.width, canvas.height);
   filled = new Array(canvas.width);
@@ -22,10 +18,8 @@ function start() {
       filled[i][j] = false;
     }
   }
-  console.log(colors);
   let seedAnchor = new Anchor(new XY(Math.floor((canvas.width - 1) / 2), Math.floor(canvas.height - 1)), popRandom(colors.flat));
   setColor(seedAnchor.pos, seedAnchor.color);
-  console.log(seedAnchor.getNeighbors());
 
   const renderer = new Renderer(colors, seedAnchor);
 
@@ -136,7 +130,6 @@ class Renderer {
     }
     const anchor = this.getNextAnchor();
     if (anchor === null || anchor === undefined) {
-      console.log('No more anchors');
       this.anchors = [];
       return;
     }
@@ -169,14 +162,12 @@ class Renderer {
 
     do {
       if (this.anchors.length === 0) {
-        console.log('No more anchors');
         return null;
       }
       anchor = popRandom(this.anchors);
       usable = anchor.hasNeighbors();
     } while (!usable);
 
-    // console.log(`Chose anchor ${anchor}`);
     return anchor;
   }
 }
@@ -268,7 +259,6 @@ class ColorSpace {
       }
     }
 
-    console.log('Failure :(');
     return rgb;
   }
 
@@ -376,7 +366,6 @@ class XY extends Equatable {
 class Anchor extends Equatable {
   constructor(pos, color) {
     super();
-    // console.log(`New anchor at ${pos} with color ${color}`);
     this.pos = pos;
     this.color = color;
   }
