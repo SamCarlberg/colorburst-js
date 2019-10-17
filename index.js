@@ -12,7 +12,7 @@ function start() {
   const {canvas, _} = canvasContext();
   const colors = buildColors(canvas.width, canvas.height);
   filled = new Array(canvas.width);
-  for(let i = 0; i < canvas.width; i++) {
+  for (let i = 0; i < canvas.width; i++) {
     filled[i] = new Array(canvas.height);
     for (let j = 0; j < canvas.height; j++) {
       filled[i][j] = false;
@@ -221,7 +221,7 @@ class ColorSpace {
     for (let i = 1; i < dim; i++) {
       const max = (i * 2) + 1;
 
-      const clamp = function(value) {
+      const clamp = function (value) {
         return Math.min(arr.length - 1, Math.max(0, Math.min(Math.floor(value - max / 2), dim - 1)));
       };
 
