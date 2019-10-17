@@ -12,6 +12,21 @@ body {
     font-family: Roboto;
 }
 
+.title {
+    position: relative;
+    font-size: 5vw;
+    color: #fff;
+    background-color: #000;
+    text-transform: uppercase;
+    margin: 0;
+}
+
+.title-link {
+    margin-top: 4vh;
+    margin-bottom: 4vh;
+    text-decoration: none;
+}
+
 #main_canvas {
     background: black;
 }
