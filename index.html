@@ -5,6 +5,7 @@
     <link href="https://fonts.googleapis.com/css?family=Roboto"
           rel="stylesheet">
     <link rel="stylesheet" href="./style.css">
+    <script src="./lib/reimg.js"></script>
     <script src="./main.js"></script>
 </head>
 <body>
@@ -19,6 +20,8 @@
     <div id="footer">
         <div id="progress_area" hidden="true">
             <label id="progress_text">0%</label>
+            <label id="elapsed_time_text">0 seconds</label>
+            <label id="fillrate_text">(drawing 0 pixels per second)</label>
             <progress max="100" value="0" id="progress_bar"></progress>
         </div>
         <label for="width_field">Image Width</label>
@@ -27,6 +30,7 @@
         <input type="number" id="height_field" min="1" max="4096" value="512"/>
         <div>
             <button id="draw" onclick="resetAndStart()">Draw</button>
+            <button id="download" onclick="downloadImage()">Download</button>
         </div>
     </div>
 </div>

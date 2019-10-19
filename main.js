@@ -24,24 +24,58 @@ function start() {
 
   const renderer = new Renderer(colors, seedAnchor);
 
-  let progress = 1;
-  const total = canvas.width * canvas.height;
-  let callback = () => {
-    const start = Date.now();
+  let pixelsDrawn = 1;
+  let elapsedTime = 0;
+  const numPixels = canvas.width * canvas.height;
+
+  const animationCallback = () => {
+    const frameStart = Date.now();
     const MAX_TIME_PER_ITERATION = 33; // millis
-    while (renderer.anchors.length > 0 && (Date.now() - start < MAX_TIME_PER_ITERATION)) {
+    let newPixelsDrawn = 0;
+    while (renderer.anchors.length > 0 && (Date.now() - frameStart < MAX_TIME_PER_ITERATION)) {
       renderer.renderPass();
-      progress++;
+      newPixelsDrawn++;
+      pixelsDrawn++;
     }
-    let p = 100 * progress / total;
-    $('progress_bar').value = p;
-    $('progress_text').textContent = `${Math.round(p)}%`;
+    const frameTime = Date.now() - frameStart;
+    elapsedTime += frameTime;
+    const fillRate = Math.round(pixelsDrawn / (elapsedTime / 1000));
+    const progress = 100 * pixelsDrawn / numPixels;
+    $('elapsed_time_text').textContent = `in ${toHHMMSS(elapsedTime)}`;
+    $('fillrate_text').textContent = `(drawing ${fillRate} pixels per second)`;
+    $('progress_bar').value = progress;
+    $('progress_text').textContent = `${Math.floor(progress)}%`;
     if (renderer.anchors.length > 0) {
-      animationHandle = window.requestAnimationFrame(callback);
+      animationHandle = window.requestAnimationFrame(animationCallback);
     }
   };
 
-  animationHandle = window.requestAnimationFrame(callback);
+  animationHandle = window.requestAnimationFrame(animationCallback);
+}
+
+function downloadImage() {
+  const canvas = $('main_canvas');
+  ReImg.fromCanvas(canvas).downloadPng(`colorburst-${canvas.width}x${canvas.height}.png`);
+}
+
+function toHHMMSS(millis) {
+  let seconds = Math.floor(millis / 1_000);
+  let minutes = Math.floor(seconds / 60);
+  let hours = Math.floor(minutes / 60);
+  seconds = Math.floor(seconds % 60);
+  minutes = Math.floor(minutes % 60);
+  hours = Math.floor(hours % 60);
+  if (hours > 0) {
+    return `${hours} hour${plural(hours)} ${minutes} minute${plural(minutes)} ${seconds} second${plural(seconds)}`
+  } else if (minutes > 0) {
+    return `${minutes} minute${plural(minutes)} ${seconds} second${plural(seconds)}`
+  } else {
+    return `${seconds} second${plural(seconds)}`
+  }
+}
+
+function plural(count) {
+  return count == 1 ? "" : "s";
 }
 
 function setColor(xy, rgb) {
