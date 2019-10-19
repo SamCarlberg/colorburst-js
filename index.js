@@ -5,7 +5,6 @@ let animationHandle = null;
 function start() {
   // Cancel prior execution
   if (animationHandle !== null) {
-    console.log(`Cancelling prior animation ${animationHandle}`);
     window.cancelAnimationFrame(animationHandle);
   }
 
@@ -24,9 +23,9 @@ function start() {
   const renderer = new Renderer(colors, seedAnchor);
 
   let callback = () => {
-    const MAX_ITERATIONS_PER_UPDATE = 1024;
-    let i = 0;
-    while (renderer.anchors.length > 0 && i++ < MAX_ITERATIONS_PER_UPDATE) {
+    const start = Date.now();
+    const MAX_TIME_PER_ITERATION = 33; // millis
+    while (renderer.anchors.length > 0 && (Date.now() - start < MAX_TIME_PER_ITERATION)) {
       renderer.renderPass();
     }
     if (renderer.anchors.length > 0) {
@@ -208,7 +207,6 @@ class ColorSpace {
    * @returns {RGB}
    */
   closest(rgb) {
-    // TODO
     return this.fastSearch(rgb);
   }
 
