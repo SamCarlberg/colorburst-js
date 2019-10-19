@@ -17,6 +17,10 @@
 
     </canvas>
     <div id="footer">
+        <div id="progress_area" hidden="true">
+            <label id="progress_text">0%</label>
+            <progress max="100" value="0" id="progress_bar"></progress>
+        </div>
         <label for="width_field">Image Width</label>
         <input type="number" id="width_field" min="1" max="4096" value="512"/>
         <label for="height_field">Image Height</label>

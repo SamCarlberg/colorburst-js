@@ -8,6 +8,8 @@ function start() {
     window.cancelAnimationFrame(animationHandle);
   }
 
+  $('progress_area').hidden = false
+
   const {canvas, _} = canvasContext();
   const colors = buildColors(canvas.width, canvas.height);
   filled = new Array(canvas.width);
@@ -22,12 +24,18 @@ function start() {
 
   const renderer = new Renderer(colors, seedAnchor);
 
+  let progress = 1;
+  const total = canvas.width * canvas.height;
   let callback = () => {
     const start = Date.now();
     const MAX_TIME_PER_ITERATION = 33; // millis
     while (renderer.anchors.length > 0 && (Date.now() - start < MAX_TIME_PER_ITERATION)) {
       renderer.renderPass();
+      progress++;
     }
+    let p = 100 * progress / total;
+    $('progress_bar').value = p;
+    $('progress_text').textContent = `${Math.round(p)}%`;
     if (renderer.anchors.length > 0) {
       animationHandle = window.requestAnimationFrame(callback);
     }
