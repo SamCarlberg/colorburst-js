@@ -79,7 +79,7 @@ function downloadImage(){
 }
 
 function toHHMMSS(millis) {
-  let seconds = Math.floor(millis / 1_000);
+  let seconds = Math.floor(millis / 1000);
   let minutes = Math.floor(seconds / 60);
   let hours = Math.floor(minutes / 60);
   seconds = Math.floor(seconds % 60);
