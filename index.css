@@ -30,3 +30,7 @@ body {
 #main_canvas {
     background: black;
 }
+
+#progress_bar {
+    width: 100%;
+}
