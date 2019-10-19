@@ -53,9 +53,29 @@ function start() {
   animationHandle = window.requestAnimationFrame(animationCallback);
 }
 
-function downloadImage() {
+function dataURLtoBlob(dataurl) {
+  const arr = dataurl.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--){
+      u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], {type:mime});
+}
+
+function downloadImage(){
   const canvas = $('main_canvas');
-  ReImg.fromCanvas(canvas).downloadPng(`colorburst-${canvas.width}x${canvas.height}.png`);
+  const link = document.createElement("a");
+  const imgData = canvas.toDataURL({format: 'png', multiplier: 4});
+  const strDataURI = imgData.substr(22, imgData.length);
+  const blob = dataURLtoBlob(imgData);
+  const objurl = URL.createObjectURL(blob);
+
+  link.download = `colorburst-${canvas.width}x${canvas.height}.png`;
+  link.href = objurl;
+  link.click();
 }
 
 function toHHMMSS(millis) {
