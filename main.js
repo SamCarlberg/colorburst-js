@@ -29,7 +29,10 @@ function start() {
 
   init3js();
 
-  let seedAnchor = new Anchor(new XY(Math.floor((canvas.width - 1) / 2), Math.floor(canvas.height - 1)), popRandom(colors.flat));
+  let seedColorString = $('seed_color_picker').value;
+  let startColor = colors.closest(colorStringToRgb(seedColorString));
+
+  let seedAnchor = new Anchor(new XY(Math.floor((canvas.width - 1) / 2), Math.floor(canvas.height - 1)), startColor);
   setColor(seedAnchor.pos, seedAnchor.color);
 
   const renderer = new Renderer(colors, seedAnchor);
@@ -64,6 +67,18 @@ function start() {
   };
 
   animationHandle = window.requestAnimationFrame(animationCallback);
+}
+
+function colorToSigned24Bit(s) {
+  return (parseInt(s.substr(1), 16) << 8) / 256;
+}
+
+function colorStringToRgb(colorString) {
+  let colorVal = colorToSigned24Bit(colorString);
+  let r = (colorVal >> 16) & 0xff;
+  let g = (colorVal >> 8) & 0xff;
+  let b = colorVal & 0xff;
+  return new RGB(r, g, b);
 }
 
 function init3js() {
@@ -180,6 +195,30 @@ function popRandom(values) {
   const element = values[i];
   values.splice(i, 1);
   return element;
+}
+
+/**
+ * Gets a random element from an array and returns it.
+ * @param {Array} values
+ * @returns {null|*} a random element from the array, or null if the array is empty.
+ */
+function getRandom(values) {
+  if (values.length === 0) {
+    return null;
+  }
+  const i = Math.floor(Math.random() * values.length);
+  return values[i];
+}
+
+function groupBy(extractor) {
+  return function(map, value) {
+    var key = extractor(value);
+    if (map.get(key) === undefined) {
+      map.set(key, []);
+    }
+    map.get(key).push(value);
+    return map;
+  };
 }
 
 /**
@@ -321,7 +360,7 @@ class ColorSpace {
       // Top and bottom planes
       for (let x = 0; x < max; x++) {
         for (let y = 0; y < max; y++) {
-          const plane = arr[x][y];
+          const plane = arr[clamp(r + x - 1)][clamp(g + y - 1)];
           options.push(plane[clamp(b)]);
           options.push(plane[clamp(b + max - 1)])
         }
@@ -346,7 +385,15 @@ class ColorSpace {
 
       const availableOptions = options.filter(color => !usedColors.has(color));
       if (availableOptions.length > 0) {
-        return availableOptions.sort((a, b) => a.distance(rgb) - b.distance(rgb))[0];
+        // In case of multiple colors with the same distance, group by the color
+        // distance and pick a random one from the closest group
+        let map = availableOptions.reduce(groupBy((color) => color.distance(rgb)), new Map());
+        var closest = 1000;
+        for (const key of map.keys()) {
+          closest = Math.min(key, closest);
+        }
+        var c = getRandom(map.get(closest));
+        return c;
       }
     }
 
