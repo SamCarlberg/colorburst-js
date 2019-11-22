@@ -2,6 +2,11 @@ let filled = [];
 let usedColors = new Set();
 let animationHandle = null;
 
+let scene = new THREE.Scene();
+let glRenderer = null;
+let camera = null;
+let colorCube = null;
+
 function start() {
   // Cancel prior execution
   if (animationHandle !== null) {
@@ -19,6 +24,11 @@ function start() {
       filled[i][j] = false;
     }
   }
+
+  colorCube = new ColorCube(colors);
+
+  init3js();
+
   let seedAnchor = new Anchor(new XY(Math.floor((canvas.width - 1) / 2), Math.floor(canvas.height - 1)), popRandom(colors.flat));
   setColor(seedAnchor.pos, seedAnchor.color);
 
@@ -29,28 +39,46 @@ function start() {
   const numPixels = canvas.width * canvas.height;
 
   const animationCallback = () => {
-    const frameStart = Date.now();
-    const MAX_TIME_PER_ITERATION = 33; // millis
-    let newPixelsDrawn = 0;
-    while (renderer.anchors.length > 0 && (Date.now() - frameStart < MAX_TIME_PER_ITERATION)) {
-      renderer.renderPass();
-      newPixelsDrawn++;
-      pixelsDrawn++;
-    }
-    const frameTime = Date.now() - frameStart;
-    elapsedTime += frameTime;
-    const fillRate = Math.round(pixelsDrawn / (elapsedTime / 1000));
-    const progress = 100 * pixelsDrawn / numPixels;
-    $('elapsed_time_text').textContent = `in ${toHHMMSS(elapsedTime)}`;
-    $('fillrate_text').textContent = `(drawing ${fillRate} pixels per second)`;
-    $('progress_bar').value = progress;
-    $('progress_text').textContent = `${Math.floor(progress)}%`;
     if (renderer.anchors.length > 0) {
-      animationHandle = window.requestAnimationFrame(animationCallback);
+      const frameStart = Date.now();
+      const MAX_TIME_PER_ITERATION = 33; // millis
+      let newPixelsDrawn = 0;
+      while (renderer.anchors.length > 0 && (Date.now() - frameStart < MAX_TIME_PER_ITERATION)) {
+        renderer.renderPass();
+        newPixelsDrawn++;
+        pixelsDrawn++;
+      }
+      const frameTime = Date.now() - frameStart;
+      elapsedTime += frameTime;
+      const fillRate = Math.round(pixelsDrawn / (elapsedTime / 1000));
+      const progress = 100 * pixelsDrawn / numPixels;
+      $('elapsed_time_text').textContent = `in ${toHHMMSS(elapsedTime)}`;
+      $('fillrate_text').textContent = `(drawing ${fillRate} pixels per second)`;
+      $('progress_bar').value = progress;
+      $('progress_text').textContent = `${Math.floor(progress)}%`;
     }
+
+    colorCube.render();
+    glRenderer.render(scene, camera);
+    animationHandle = window.requestAnimationFrame(animationCallback);
   };
 
   animationHandle = window.requestAnimationFrame(animationCallback);
+}
+
+function init3js() {
+  w = $('width_field').value;
+  h = $('height_field').value;
+  camera = new THREE.PerspectiveCamera(70, w / h, 0.01, 256 * 4);
+  camera.position.z = 256 * 1.414;
+  while(scene.children.length > 0){ 
+    scene.remove(scene.children[0]); 
+  }
+  scene.add(colorCube.points);
+
+  glRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: $('colorcube_canvas') });
+  glRenderer.setSize(w, h);
+  glRenderer.setPixelRatio(window.devicePixelRatio);
 }
 
 function dataURLtoBlob(dataurl) {
@@ -59,7 +87,7 @@ function dataURLtoBlob(dataurl) {
   const bstr = atob(arr[1]);
   let n = bstr.length;
   const u8arr = new Uint8Array(n);
-  while (n--){
+  while (n--) {
       u8arr[n] = bstr.charCodeAt(n);
   }
   return new Blob([u8arr], {type:mime});
@@ -104,6 +132,8 @@ function setColor(xy, rgb) {
   context.fillRect(xy.x, xy.y, 1, 1);
   usedColors.add(rgb);
   filled[xy.x][xy.y] = true;
+
+  colorCube.addPoint(rgb);
 }
 
 function resetAndStart() {
