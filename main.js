@@ -17,6 +17,7 @@ function start() {
   }
 
   $('progress_area').hidden = false
+  $('toggle_generation').value = 'Pause';
 
   const {canvas, _} = canvasContext();
   const colors = buildColors(canvas.width, canvas.height);
