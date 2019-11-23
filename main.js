@@ -372,14 +372,14 @@ class ColorSpace {
         return Math.min(arr.length - 1, Math.max(0, Math.min(Math.floor(value - max / 2), dim - 1)));
       };
 
-      const options = [];
+      const options = new Set();
 
       // Top and bottom planes
       for (let x = 0; x < max; x++) {
         for (let y = 0; y < max; y++) {
           const plane = arr[clamp(r + x - 1)][clamp(g + y - 1)];
-          options.push(plane[clamp(b)]);
-          options.push(plane[clamp(b + max - 1)])
+          options.add(plane[clamp(b)]);
+          options.add(plane[clamp(b + max - 1)])
         }
       }
 
@@ -390,17 +390,17 @@ class ColorSpace {
       for (let z = 1; z < max - 1; z++) {
         for (let x = 0; x < max; x++) {
           // Two edges
-          options.push(arr[clamp(r + x)][clamp(g)][clamp(b + z)]);
-          options.push(arr[clamp(r + max - 1)][clamp(g + max - 1)][clamp(b + z)]);
+          options.add(arr[clamp(r + x)][clamp(g)][clamp(b + z)]);
+          options.add(arr[clamp(r + max - 1)][clamp(g + max - 1)][clamp(b + z)]);
         }
         // Other edges - start and end one position in to avoid duplicating the corners
         for (let y = 1; y < max - 1; y++) {
-          options.push(arr[clamp(r)][clamp(g + y)][clamp(b + z)]);
-          options.push(arr[clamp(r + max - 1)][clamp(g + y)][clamp(b + z)]);
+          options.add(arr[clamp(r)][clamp(g + y)][clamp(b + z)]);
+          options.add(arr[clamp(r + max - 1)][clamp(g + y)][clamp(b + z)]);
         }
       }
 
-      const availableOptions = options.filter(color => !usedColors.has(color));
+      const availableOptions = [...options].filter(color => !usedColors.has(color));
       if (availableOptions.length > 0) {
         // In case of multiple colors with the same distance, group by the color
         // distance and pick a random one from the closest group
