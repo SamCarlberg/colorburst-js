@@ -5,6 +5,7 @@ let animationHandle = null;
 let scene = new THREE.Scene();
 let glRenderer = null;
 let camera = null;
+let cameraControls = null;
 let colorCube = null;
 
 var buildingImage = false;
@@ -65,6 +66,7 @@ function start() {
     }
 
     colorCube.render();
+    cameraControls.update();
     glRenderer.render(scene, camera);
     animationHandle = window.requestAnimationFrame(animationCallback);
   };
@@ -106,6 +108,8 @@ function init3js() {
   glRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: $('colorcube_canvas') });
   glRenderer.setSize(w, h);
   glRenderer.setPixelRatio(window.devicePixelRatio);
+
+  cameraControls = new THREE.TrackballControls(camera, glRenderer.domElement);
 }
 
 function dataURLtoBlob(dataurl) {

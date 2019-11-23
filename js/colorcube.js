@@ -30,8 +30,5 @@ class ColorCube {
       this.geometry.computeBoundingBox();
     }
     this.pointsUpdated = false;
-    this.points.rotation.x += 0.01;
-    this.points.rotation.y += 0.01;
-    this.points.rotation.z += 0.01;
   }
 }
