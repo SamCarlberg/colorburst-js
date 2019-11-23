@@ -7,6 +7,8 @@ let glRenderer = null;
 let camera = null;
 let colorCube = null;
 
+var buildingImage = false;
+
 function start() {
   // Cancel prior execution
   if (animationHandle !== null) {
@@ -37,16 +39,17 @@ function start() {
 
   const renderer = new Renderer(colors, seedAnchor);
 
+  buildingImage = true;
   let pixelsDrawn = 1;
   let elapsedTime = 0;
   const numPixels = canvas.width * canvas.height;
 
   const animationCallback = () => {
-    if (renderer.anchors.length > 0) {
+    if (buildingImage && renderer.anchors.length > 0) {
       const frameStart = Date.now();
       const MAX_TIME_PER_ITERATION = 33; // millis
       let newPixelsDrawn = 0;
-      while (renderer.anchors.length > 0 && (Date.now() - frameStart < MAX_TIME_PER_ITERATION)) {
+      while (buildingImage && renderer.anchors.length > 0 && (Date.now() - frameStart < MAX_TIME_PER_ITERATION)) {
         renderer.renderPass();
         newPixelsDrawn++;
         pixelsDrawn++;
@@ -67,6 +70,15 @@ function start() {
   };
 
   animationHandle = window.requestAnimationFrame(animationCallback);
+}
+
+function toggleGeneration() {
+  buildingImage = !buildingImage;
+  if (buildingImage) {
+    $('toggle_generation').value = 'Pause';
+  } else {
+    $('toggle_generation').value = 'Resume'
+  }
 }
 
 function colorToSigned24Bit(s) {
