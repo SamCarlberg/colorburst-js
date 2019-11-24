@@ -2,6 +2,7 @@ let filled = [];
 let usedColors = new Set();
 let animationHandle = null;
 
+var showColorspace = true;
 let scene = new THREE.Scene();
 let glRenderer = null;
 let camera = null;
@@ -18,6 +19,7 @@ function start() {
 
   $('progress_area').hidden = false
   $('toggle_generation').value = 'Pause';
+  showColorspace = $('display_colorspace').checked;
 
   const {canvas, _} = canvasContext();
   const colors = buildColors(canvas.width, canvas.height);
@@ -31,7 +33,10 @@ function start() {
 
   colorCube = new ColorCube(colors);
 
-  init3js();
+  $('colorcube_canvas').hidden = !showColorspace;
+  if (showColorspace) {
+    init3js();
+  }
 
   let seedColorString = $('seed_color_picker').value;
   let startColor = colors.closest(colorStringToRgb(seedColorString));
@@ -66,9 +71,11 @@ function start() {
       $('progress_text').textContent = `${Math.floor(progress)}%`;
     }
 
-    colorCube.render();
-    cameraControls.update();
-    glRenderer.render(scene, camera);
+    if (showColorspace) {
+      colorCube.render();
+      cameraControls.update();
+      glRenderer.render(scene, camera);
+    }
     animationHandle = window.requestAnimationFrame(animationCallback);
   };
 
@@ -165,7 +172,9 @@ function setColor(xy, rgb) {
   usedColors.add(rgb);
   filled[xy.x][xy.y] = true;
 
-  colorCube.addPoint(rgb);
+  if (showColorspace) {
+    colorCube.addPoint(rgb);
+  }
 }
 
 function resetAndStart() {
