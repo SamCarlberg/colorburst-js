@@ -170,7 +170,8 @@ function setColor(xy, rgb) {
   const {_, context} = canvasContext();
   context.fillStyle = rgb.toColorString();
   context.fillRect(xy.x, xy.y, 1, 1);
-  usedColors.add(rgb);
+  // usedColors.add(rgb);
+  rgb.inUse = true;
   filled[xy.x][xy.y] = true;
 
   if (showColorspace) {
@@ -404,7 +405,8 @@ class ColorSpace {
           for (let z = b - searchRadius; z <= b + searchRadius && z < dim; z += increment) {
             const color = this.safeRead(arr, x, y, z);
 
-            if (color && !usedColors.has(color)) {
+            // if (color && !usedColors.has(color)) {
+            if (color && color.inUse === false) {
               options.add(color);
             }
           }
@@ -475,6 +477,7 @@ class RGB extends Equatable {
     this.r = r;
     this.g = g;
     this.b = b;
+    this.inUse = false;
     return this;
   }
 
