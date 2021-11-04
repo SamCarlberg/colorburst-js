@@ -114,7 +114,8 @@ function init3js() {
   scene.add(colorCube.points);
 
   glRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: $('colorcube_canvas') });
-  glRenderer.setSize(w, h);
+  // glRenderer.setSize(w, h);
+  glRenderer.setSize(512, 512);
   glRenderer.setPixelRatio(window.devicePixelRatio);
 
   cameraControls = new THREE.TrackballControls(camera, glRenderer.domElement);
@@ -367,63 +368,74 @@ class ColorSpace {
     return this.fastSearch(rgb);
   }
 
+  safeRead(arr, i1, i2, i3) {
+    // arr[i1][i2][i3], but null-safe - if any of the indices are out-of-bounds, return null instead of raising an error
+    const a1 = arr[i1];
+    if (!!!a1) { return null; }
+
+    const a2 = a1[i2];
+    if (!!!a2) { return null; }
+
+    const a3 = a2[i3];
+    if (!!!a3) { return null; }
+
+    return a3;
+  }
+
   fastSearch(rgb) {
     const dim = this.colorDepth;
     const arr = this.arr;
-    const r = Math.floor(rgb.r / this.colorSkip + 1);
-    const g = Math.floor(rgb.g / this.colorSkip + 1);
-    const b = Math.floor(rgb.b / this.colorSkip + 1);
+    const r = Math.round(rgb.r / this.colorSkip + 0.0);
+    const g = Math.round(rgb.g / this.colorSkip + 0.0);
+    const b = Math.round(rgb.b / this.colorSkip + 0.0);
 
-    for (let i = 1; i < dim; i++) {
-      const max = Math.min(this.colorDepth, (i * 2) + 1);
-
-      const clamp = function (value) {
-        return Math.min(arr.length - 1, Math.max(0, Math.min(Math.floor(value - max / 2), dim - 1)));
-      };
-
+    // Search the faces of a cube centered at point (R, G, B) with radius (colorDepth / 2) to find any unused colors;
+    // out of those colors, find the one closest to (R, G, B) and return it.  If multiple colors are the same distance,
+    // pick one of them at random.
+    for (let searchRadius = 0; searchRadius < this.colorDepth; searchRadius++) {
       const options = new Set();
 
-      // Top and bottom planes
-      for (let x = 0; x < max; x++) {
-        for (let y = 0; y < max; y++) {
-          const plane = arr[clamp(r + x - 1)][clamp(g + y - 1)];
-          options.add(plane[clamp(b)]);
-          options.add(plane[clamp(b + max - 1)])
+      // TODO: search the faces of an expanding cube, not the entire volume
+      // There's a lot of inefficiency here when searchRadius > 1
+      const increment = 1;
+
+      for (let x = r - searchRadius; x <= r + searchRadius && x < dim; x += increment) {
+        for (let y = g - searchRadius; y <= g + searchRadius && y < dim; y += increment) {
+          for (let z = b - searchRadius; z <= b + searchRadius && z < dim; z += increment) {
+            const color = this.safeRead(arr, x, y, z);
+
+            if (color && !usedColors.has(color)) {
+              options.add(color);
+            }
+          }
         }
       }
 
-      // Intermediate planes. Ignore the internals of the cube since prior
-      // iterations will have covered those, or in the initial case of max=3,
-      // the center value is the input color and we don't want to return it
-      // anyway
-      for (let z = 1; z < max - 1; z++) {
-        for (let x = 0; x < max; x++) {
-          // Two edges
-          options.add(arr[clamp(r + x)][clamp(g)][clamp(b + z)]);
-          options.add(arr[clamp(r + max - 1)][clamp(g + max - 1)][clamp(b + z)]);
-        }
-        // Other edges - start and end one position in to avoid duplicating the corners
-        for (let y = 1; y < max - 1; y++) {
-          options.add(arr[clamp(r)][clamp(g + y)][clamp(b + z)]);
-          options.add(arr[clamp(r + max - 1)][clamp(g + y)][clamp(b + z)]);
-        }
-      }
+      const availableOptions = [...options];
+      if (availableOptions.length === 1) {
+        return availableOptions[0];
+      } else if (availableOptions.length > 1) {
+        let closestDistance = null;
+        let closestOptions = [];
 
-      const availableOptions = [...options].filter(color => !usedColors.has(color));
-      if (availableOptions.length > 0) {
-        // In case of multiple colors with the same distance, group by the color
-        // distance and pick a random one from the closest group
-        let map = availableOptions.reduce(groupBy((color) => color.distance(rgb)), new Map());
-        var closest = 1000;
-        for (const key of map.keys()) {
-          closest = Math.min(key, closest);
+        for (const option of availableOptions) {
+          const distance = option.distance(rgb);
+          if (!closestDistance || distance < closestDistance) {
+            closestDistance = distance;
+            closestOptions = [];
+            closestOptions.push(option);
+          } else if (Math.abs(distance - closestDistance) < 0.01) { // epsilon comparison
+            closestOptions.push(option);
+          }
         }
-        var c = getRandom(map.get(closest));
-        return c;
+
+        return getRandom(closestOptions);
       }
     }
 
-    return rgb;
+    // Should never get here - the search should exhaustively cover the entire color space
+    console.warn(`Search found no results for ${rgb}!`);
+    return new RGB(255, 255, 255);
   }
 
   /**
@@ -499,10 +511,11 @@ class RGB extends Equatable {
    */
   distance(other) {
     return Math.sqrt(
-      Math.pow((this.r - other.r), 2)
-      + Math.pow(this.g - other.g, 2)
-      + Math.pow(this.b - other.b, 2)
+      Math.pow((this.r - other.r), 2) +
+      Math.pow((this.g - other.g), 2) + 
+      Math.pow((this.b - other.b), 2)
     );
+    // return deltaE(rgb2lab([this.r, this.g, this.b]), rgb2lab([other.r, other.g, other.b]));
   }
 }
 
@@ -586,3 +599,78 @@ class Anchor extends Equatable {
     return neighbors;
   }
 }
+
+
+// RGB-LAB conversion
+// SOURCE: https://github.com/antimatter15/rgb-lab/blob/master/color.js
+
+// the following functions are based off of the pseudocode
+// found on www.easyrgb.com
+
+function lab2rgb(lab){
+  var y = (lab[0] + 16) / 116,
+      x = lab[1] / 500 + y,
+      z = y - lab[2] / 200,
+      r, g, b;
+
+  x = 0.95047 * ((x * x * x > 0.008856) ? x * x * x : (x - 16/116) / 7.787);
+  y = 1.00000 * ((y * y * y > 0.008856) ? y * y * y : (y - 16/116) / 7.787);
+  z = 1.08883 * ((z * z * z > 0.008856) ? z * z * z : (z - 16/116) / 7.787);
+
+  r = x *  3.2406 + y * -1.5372 + z * -0.4986;
+  g = x * -0.9689 + y *  1.8758 + z *  0.0415;
+  b = x *  0.0557 + y * -0.2040 + z *  1.0570;
+
+  r = (r > 0.0031308) ? (1.055 * Math.pow(r, 1/2.4) - 0.055) : 12.92 * r;
+  g = (g > 0.0031308) ? (1.055 * Math.pow(g, 1/2.4) - 0.055) : 12.92 * g;
+  b = (b > 0.0031308) ? (1.055 * Math.pow(b, 1/2.4) - 0.055) : 12.92 * b;
+
+  return [Math.max(0, Math.min(1, r)) * 255, 
+          Math.max(0, Math.min(1, g)) * 255, 
+          Math.max(0, Math.min(1, b)) * 255]
+}
+
+
+function rgb2lab(rgb){
+  var r = rgb[0] / 255,
+      g = rgb[1] / 255,
+      b = rgb[2] / 255,
+      x, y, z;
+
+  r = (r > 0.04045) ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
+  g = (g > 0.04045) ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
+  b = (b > 0.04045) ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
+
+  x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047;
+  y = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 1.00000;
+  z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883;
+
+  x = (x > 0.008856) ? Math.pow(x, 1/3) : (7.787 * x) + 16/116;
+  y = (y > 0.008856) ? Math.pow(y, 1/3) : (7.787 * y) + 16/116;
+  z = (z > 0.008856) ? Math.pow(z, 1/3) : (7.787 * z) + 16/116;
+
+  return [(116 * y) - 16, 500 * (x - y), 200 * (y - z)]
+}
+
+// calculate the perceptual distance between colors in CIELAB
+// https://github.com/THEjoezack/ColorMine/blob/master/ColorMine/ColorSpaces/Comparisons/Cie94Comparison.cs
+
+function deltaE(labA, labB){
+  var deltaL = labA[0] - labB[0];
+  var deltaA = labA[1] - labB[1];
+  var deltaB = labA[2] - labB[2];
+  var c1 = Math.sqrt(labA[1] * labA[1] + labA[2] * labA[2]);
+  var c2 = Math.sqrt(labB[1] * labB[1] + labB[2] * labB[2]);
+  var deltaC = c1 - c2;
+  var deltaH = deltaA * deltaA + deltaB * deltaB - deltaC * deltaC;
+  deltaH = deltaH < 0 ? 0 : Math.sqrt(deltaH);
+  var sc = 1.0 + 0.045 * c1;
+  var sh = 1.0 + 0.015 * c1;
+  var deltaLKlsl = deltaL / (1.0);
+  var deltaCkcsc = deltaC / (sc);
+  var deltaHkhsh = deltaH / (sh);
+  var i = deltaLKlsl * deltaLKlsl + deltaCkcsc * deltaCkcsc + deltaHkhsh * deltaHkhsh;
+  return i < 0 ? 0 : Math.sqrt(i);
+}
+
+// end RGB-LAB conversion
