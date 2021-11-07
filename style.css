@@ -12,6 +12,11 @@ body {
     font-family: Roboto;
 }
 
+div#main {
+    text-align: center;
+    max-width: 95%;
+}
+
 .title {
     position: relative;
     font-size: 5vw;
@@ -29,6 +34,7 @@ body {
 
 #main_canvas {
     background: black;
+    max-width: 100%;
 }
 
 #progress_bar {
