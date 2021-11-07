@@ -193,19 +193,7 @@ function buildColors(width, height) {
   const colorSkip = 256 / colorDepth;
 
   const matrix = new ColorSpace(colorDepth, colorSkip);
-  for (let i = 0; i < colorDepth; i++) {
-    for (let j = 0; j < colorDepth; j++) {
-      for (let k = 0; k < colorDepth; k++) {
-        let rgb = new RGB(
-          Math.floor(i * colorSkip),
-          Math.floor(j * colorSkip),
-          Math.floor(k * colorSkip)
-        );
-
-        matrix.set(i, j, k, rgb);
-      }
-    }
-  }
+  matrix.build();
 
   return matrix;
 }
@@ -349,12 +337,31 @@ class ColorSpace {
     this.colorSkip = colorSkip;
     this.flat = [];
     this.arr = new Array(colorDepth);
+    this.indexes = [];
     for (let x = 0; x < colorDepth; x++) {
       this.arr[x] = new Array(colorDepth);
       for (let y = 0; y < colorDepth; y++) {
         this.arr[x][y] = new Array(colorDepth);
         for (let z = 0; z < colorDepth; z++) {
           this.arr[x][y][z] = 0;
+        }
+      }
+    }
+  }
+
+  build() {
+    for (let i = 0; i < this.colorDepth; i++) {
+      this.indexes.push(Math.floor(i * this.colorSkip)); // i, j, k are all going to be in the same set of numbers
+
+      for (let j = 0; j < this.colorDepth; j++) {
+        for (let k = 0; k < this.colorDepth; k++) {
+          let rgb = new RGB(
+            Math.floor(i * this.colorSkip), // R
+            Math.floor(j * this.colorSkip), // G
+            Math.floor(k * this.colorSkip)  // B
+          );
+
+          this.set(i, j, k, rgb);
         }
       }
     }
@@ -383,12 +390,25 @@ class ColorSpace {
     return a3;
   }
 
+  mapToIndex(channelValue) {
+    // +1, -2, +3, -4, +5, -6, +7, -8, +9, -10, ...
+    // checks offsets of +1, -1, +2, -2, etc
+    var offset = 1;
+    while(this.indexes.indexOf(channelValue) === -1) {
+      channelValue += offset;
+      offset = -1 * (offset + Math.sign(offset));
+    }
+
+    return this.indexes.indexOf(channelValue);
+  }
+
   fastSearch(rgb) {
     const dim = this.colorDepth;
     const arr = this.arr;
-    const r = Math.round(rgb.r / this.colorSkip + 0.0);
-    const g = Math.round(rgb.g / this.colorSkip + 0.0);
-    const b = Math.round(rgb.b / this.colorSkip + 0.0);
+
+    const r = this.mapToIndex(rgb.r);
+    const g = this.mapToIndex(rgb.g);
+    const b = this.mapToIndex(rgb.b);
 
     // Search the faces of a cube centered at point (R, G, B) with radius (colorDepth / 2) to find any unused colors;
     // out of those colors, find the one closest to (R, G, B) and return it.  If multiple colors are the same distance,
