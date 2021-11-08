@@ -189,7 +189,7 @@ function resetAndStart() {
 }
 
 function buildColors(width, height) {
-  const colorDepth = Math.ceil(Math.pow(2, (Math.log2(width) + Math.log2(height)) / 3));
+  const colorDepth = Math.ceil(Math.pow(2, (Math.log2(width * height)) / 3));
   const colorSkip = 256 / colorDepth;
 
   const matrix = new ColorSpace(colorDepth, colorSkip);
@@ -410,30 +410,54 @@ class ColorSpace {
     const g = this.mapToIndex(rgb.g);
     const b = this.mapToIndex(rgb.b);
 
-    // Search the faces of a cube centered at point (R, G, B) with radius (colorDepth / 2) to find any unused colors;
+    // Search the faces of a cube centered at point (R, G, B) with radius up to colorDepth to find any unused colors;
     // out of those colors, find the one closest to (R, G, B) and return it.  If multiple colors are the same distance,
     // pick one of them at random.
     for (let searchRadius = 0; searchRadius < this.colorDepth; searchRadius++) {
-      const options = new Set();
+      const availableOptions = [];
 
-      // TODO: search the faces of an expanding cube, not the entire volume
-      // There's a lot of inefficiency here when searchRadius > 1
-      const increment = 1;
-
-      for (let x = r - searchRadius; x <= r + searchRadius && x < dim; x += increment) {
-        for (let y = g - searchRadius; y <= g + searchRadius && y < dim; y += increment) {
-          for (let z = b - searchRadius; z <= b + searchRadius && z < dim; z += increment) {
+      // bottom red-green plane and top red-green plane (-b, +b)
+      for (let x = r - searchRadius; x <= r + searchRadius && x < dim; x++) {
+        for (let y = g - searchRadius; y <= g + searchRadius && y < dim; y++) {
+          for (const z of [b - searchRadius, b + searchRadius]) {
             const color = this.safeRead(arr, x, y, z);
 
-            // if (color && !usedColors.has(color)) {
+            // will add the same color twice in the case of searchRadius === 0,
+            // but that's the only color in the search space so that doesn't matter
             if (color && color.inUse === false) {
-              options.add(color);
+              availableOptions.push(color);
             }
           }
         }
       }
 
-      const availableOptions = [...options];
+      // left green-blue plane and right green-blue plane (-r, +r)
+      // z-index is pushed towards the center by one to avoid re-querying the edges on the R-G planes
+      for (let y = g - searchRadius; y <= g + searchRadius && y < dim; y++) {
+        for (let z = b - searchRadius + 1; z <= b + searchRadius - 1 && z < dim; z++) {
+          for (const x of [r - searchRadius, r + searchRadius]) {
+            const color = this.safeRead(arr, x, y, z);
+
+            if (color && color.inUse === false) {
+              availableOptions.push(color);
+            }
+          }
+        }
+      }
+
+      // front red-blue plane and back red-blue plane
+      for (let x = r - searchRadius + 1; x <= r + searchRadius - 1 && x < dim; x++) {
+        for (let z = b - searchRadius + 1; z <= b + searchRadius - 1 && z < dim; z++) {
+          for (const y of [g - searchRadius, g + searchRadius]) {
+            const color = this.safeRead(arr, x, y, z);
+
+            if (color && color.inUse === false) {
+              availableOptions.push(color);
+            }
+          }
+        }
+      }
+
       if (availableOptions.length === 1) {
         return availableOptions[0];
       } else if (availableOptions.length > 1) {
