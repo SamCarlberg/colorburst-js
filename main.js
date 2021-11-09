@@ -11,7 +11,32 @@ let colorCube = null;
 
 var buildingImage = false;
 
+String.prototype.hashCode = function() {
+  var hash = 0, i, chr;
+  if (this.length === 0) return hash;
+  for (i = 0; i < this.length; i++) {
+    chr   = this.charCodeAt(i);
+    hash  = ((hash << 5) - hash) + chr;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return hash;
+};
+
+var random = null;
+
 function start() {
+  const randomSeedInput = $('random_seed_input').value;
+  var randomSeed = null;
+  if (randomSeedInput === '') {
+    const rand = new Random(Math.floor(Math.random() * 4294967296));
+    randomSeed = rand.mulberry32(Math.floor(Math.random() * 4294967296));
+    $('random_seed_input').placeholder = randomSeed;
+  } else {
+    randomSeed = randomSeedInput.hashCode();
+  }
+
+  random = new Random(randomSeed);
+
   // Cancel prior execution
   if (animationHandle !== null) {
     window.cancelAnimationFrame(animationHandle);
@@ -207,7 +232,7 @@ function popRandom(values) {
   if (values.length === 0) {
     return null;
   }
-  const i = Math.floor(Math.random() * values.length);
+  const i = Math.floor(random.nextRandom() * values.length);
   const element = values[i];
   values.splice(i, 1);
   return element;
@@ -222,7 +247,7 @@ function getRandom(values) {
   if (values.length === 0) {
     return null;
   }
-  const i = Math.floor(Math.random() * values.length);
+  const i = Math.floor(random.nextRandom() * values.length);
   return values[i];
 }
 

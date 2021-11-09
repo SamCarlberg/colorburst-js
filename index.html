@@ -1,47 +1,54 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <html>
-<head>
-    <title>Colorburst</title>
-    <link href="https://fonts.googleapis.com/css?family=Roboto"
-          rel="stylesheet">
-    <link rel="stylesheet" href="./style.css">
-    <script src="./js/three.min.js"></script>
-    <script src="./js/trackball_controls.js"></script>
-    <script src="./js/colorcube.js"></script>
-    <script src="./main.js"></script>
-</head>
-<body>
-<div id="main" style="text-align: center;">
-    <a class="title-link" title="Colorburst Github repository"
-       href="https://github.com/samcarlberg/colorburst-js">
-        <h1 class="title">Colorburst</h1>
-    </a>
-    <canvas id="main_canvas" width="0" height="0">
+    <head>
+        <title>Colorburst</title>
+        <link href="https://fonts.googleapis.com/css?family=Roboto"
+              rel="stylesheet">
+        <link rel="stylesheet" href="./style.css">
+        <script src="./js/three.min.js"></script>
+        <script src="./js/trackball_controls.js"></script>
+        <script src="./js/colorcube.js"></script>
+        <script src="./js/random.js"></script>
+        <script src="./main.js"></script>
+    </head>
+    <body>
+        <div id="main" style="text-align: center;">
+            <a class="title-link" title="Colorburst Github repository"
+               href="https://github.com/samcarlberg/colorburst-js">
+                <h1 class="title">Colorburst</h1>
+            </a>
+            <canvas id="main_canvas" width="512" height="512">
 
-    </canvas>
-    <canvas id="colorcube_canvas">
-    </canvas>
-    <div id="footer">
-        <div id="progress_area" hidden="true">
-            <label id="progress_text">0%</label>
-            <label id="elapsed_time_text">0 seconds</label>
-            <label id="fillrate_text">(drawing 0 pixels per second)</label>
-            <progress max="100" value="0" id="progress_bar"></progress>
+            </canvas>
+            <canvas id="colorcube_canvas">
+            </canvas>
+            <div id="footer">
+                <div id="progress_area" hidden="true">
+                    <label id="progress_text">0%</label>
+                    <label id="elapsed_time_text">0 seconds</label>
+                    <label id="fillrate_text">(drawing 0 pixels per second)</label>
+                    <progress max="100" value="0" id="progress_bar"></progress>
+                </div>
+                <label for="width_field">Image Width</label>
+                <input type="number" id="width_field" min="1" max="4096" value="512"/>
+
+                <label for="height_field">Image Height</label>
+                <input type="number" id="height_field" min="1" max="4096" value="512"/>
+
+                <label for="seed_color_picker">Seed Color</label>
+                <input type="color" id="seed_color_picker" value="#ffff00"></input>
+
+                <label for="random_seed_input">Random Seed</label>
+                <input type="text" id="random_seed_input" value="" placeholder=""></input>
+
+                <input type="checkbox" id="display_colorspace" checked>Visualize Colorspace</input>
+                <div>
+                    <button id="draw" onclick="resetAndStart()">Draw</button>
+                    <button id="download" onclick="downloadImage()">Download</button>
+                    <input type="button" id="toggle_generation" onclick="toggleGeneration()" value="Pause"></input>
+                </div>
+            </div>
         </div>
-        <label for="width_field">Image Width</label>
-        <input type="number" id="width_field" min="1" max="4096" value="512"/>
-        <label for="height_field">Image Height</label>
-        <input type="number" id="height_field" min="1" max="4096" value="512"/>
-        <label for="seed_color_picker">Seed color</label>
-        <input type="color" id="seed_color_picker" value="#ffff00"></input>
-        <input type="checkbox" id="display_colorspace" checked>Visualize colorspace</input>
-        <div>
-            <button id="draw" onclick="resetAndStart()">Draw</button>
-            <button id="download" onclick="downloadImage()">Download</button>
-            <input type="button" id="toggle_generation" onclick="toggleGeneration()" value="Pause"></input>
-        </div>
-    </div>
-</div>
-</body>
+    </body>
 </html>
