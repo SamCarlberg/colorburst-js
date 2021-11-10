@@ -3,7 +3,7 @@ let usedColors = new Set();
 let animationHandle = null;
 
 var showColorspace = true;
-let scene = new THREE.Scene();
+let scene = null;
 let glRenderer = null;
 let camera = null;
 let cameraControls = null;
@@ -58,10 +58,7 @@ function start() {
 
   colorCube = new ColorCube(colors);
 
-  $('colorcube_canvas').hidden = !showColorspace;
-  if (showColorspace) {
-    init3js();
-  }
+  init3js();
 
   let seedColorString = $('seed_color_picker').value;
   let startColor = colors.closest(colorStringToRgb(seedColorString));
@@ -96,10 +93,19 @@ function start() {
       $('progress_text').textContent = `${Math.floor(progress)}%`;
     }
 
+    showColorspace = $('display_colorspace').checked;
+    $('colorcube_canvas').hidden = !showColorspace;
+
     if (showColorspace) {
       colorCube.render();
+
+      if (!scene) {
+        init3js();
+      }
       cameraControls.update();
       glRenderer.render(scene, camera);
+    } else {
+      scene = null;
     }
     animationHandle = window.requestAnimationFrame(animationCallback);
   };
@@ -129,18 +135,20 @@ function colorStringToRgb(colorString) {
 }
 
 function init3js() {
+  scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(70, 1, 0.01, 256 * 4);
   camera.position.z = 256 * 1.414;
-  while(scene.children.length > 0){ 
-    scene.remove(scene.children[0]); 
+  while(scene.children.length > 0) {
+    scene.remove(scene.children[0]);
   }
   scene.add(colorCube.points);
 
-  glRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: $('colorcube_canvas') });
+  const canvas = $('colorcube_canvas');
+  glRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas });
   glRenderer.setSize(512, 512);
   glRenderer.setPixelRatio(window.devicePixelRatio);
 
-  cameraControls = new THREE.TrackballControls(camera, glRenderer.domElement);
+  cameraControls = new THREE.TrackballControls(camera, canvas);
 }
 
 function dataURLtoBlob(dataurl) {
@@ -196,9 +204,7 @@ function setColor(xy, rgb) {
   rgb.inUse = true;
   filled[xy.x][xy.y] = true;
 
-  if (showColorspace) {
-    colorCube.addPoint(rgb);
-  }
+  colorCube.addPoint(rgb);
 }
 
 function resetAndStart() {
