@@ -129,9 +129,7 @@ function colorStringToRgb(colorString) {
 }
 
 function init3js() {
-  w = $('width_field').value;
-  h = $('height_field').value;
-  camera = new THREE.PerspectiveCamera(70, w / h, 0.01, 256 * 4);
+  camera = new THREE.PerspectiveCamera(70, 1, 0.01, 256 * 4);
   camera.position.z = 256 * 1.414;
   while(scene.children.length > 0){ 
     scene.remove(scene.children[0]); 
@@ -139,7 +137,6 @@ function init3js() {
   scene.add(colorCube.points);
 
   glRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: $('colorcube_canvas') });
-  // glRenderer.setSize(w, h);
   glRenderer.setSize(512, 512);
   glRenderer.setPixelRatio(window.devicePixelRatio);
 
