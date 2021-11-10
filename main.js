@@ -465,7 +465,7 @@ class ColorSpace {
         for (let z = Math.max(0, b - searchRadius + 1); z <= b + searchRadius - 1 && z < dim; z++) {
           for (const x of xOffsets) {
             const color = arr[x][y][z];
-            
+
             if (color && color.inUse === false) {
               availableOptions.push(color);
             }
@@ -587,7 +587,7 @@ class RGB extends Equatable {
   distance(other) {
     return Math.sqrt(
       Math.pow((this.r - other.r), 2) +
-      Math.pow((this.g - other.g), 2) + 
+      Math.pow((this.g - other.g), 2) +
       Math.pow((this.b - other.b), 2)
     );
     // return deltaE(rgb2lab([this.r, this.g, this.b]), rgb2lab([other.r, other.g, other.b]));
@@ -700,8 +700,8 @@ function lab2rgb(lab){
   g = (g > 0.0031308) ? (1.055 * Math.pow(g, 1/2.4) - 0.055) : 12.92 * g;
   b = (b > 0.0031308) ? (1.055 * Math.pow(b, 1/2.4) - 0.055) : 12.92 * b;
 
-  return [Math.max(0, Math.min(1, r)) * 255, 
-          Math.max(0, Math.min(1, g)) * 255, 
+  return [Math.max(0, Math.min(1, r)) * 255,
+          Math.max(0, Math.min(1, g)) * 255,
           Math.max(0, Math.min(1, b)) * 255]
 }
 
