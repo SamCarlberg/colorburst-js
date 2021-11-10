@@ -401,20 +401,6 @@ class ColorSpace {
     return this.fastSearch(rgb);
   }
 
-  safeRead(arr, i1, i2, i3) {
-    // arr[i1][i2][i3], but null-safe - if any of the indices are out-of-bounds, return null instead of raising an error
-    const a1 = arr[i1];
-    if (!!!a1) { return null; }
-
-    const a2 = a1[i2];
-    if (!!!a2) { return null; }
-
-    const a3 = a2[i3];
-    if (!!!a3) { return null; }
-
-    return a3;
-  }
-
   mapToIndex(channelValue) {
     // +1, -2, +3, -4, +5, -6, +7, -8, +9, -10, ...
     // checks offsets of +1, -1, +2, -2, etc
@@ -441,11 +427,25 @@ class ColorSpace {
     for (let searchRadius = 0; searchRadius < this.colorDepth; searchRadius++) {
       const availableOptions = [];
 
+
+      const xOffsets = [];
+      const yOffsets = [];
+      const zOffsets = [];
+
+      if (r - searchRadius >= 0)  { xOffsets.push(r - searchRadius); }
+      if (r + searchRadius < dim) { xOffsets.push(r + searchRadius); }
+
+      if (g - searchRadius >= 0)  { yOffsets.push(g - searchRadius); }
+      if (g + searchRadius < dim) { yOffsets.push(g + searchRadius); }
+
+      if (b - searchRadius >= 0)  { zOffsets.push(b - searchRadius); }
+      if (b + searchRadius < dim) { zOffsets.push(b + searchRadius); }
+
       // bottom red-green plane and top red-green plane (-b, +b)
-      for (let x = r - searchRadius; x <= r + searchRadius && x < dim; x++) {
-        for (let y = g - searchRadius; y <= g + searchRadius && y < dim; y++) {
-          for (const z of [b - searchRadius, b + searchRadius]) {
-            const color = this.safeRead(arr, x, y, z);
+      for (let x = Math.max(0, r - searchRadius); x <= r + searchRadius && x < dim; x++) {
+        for (let y = Math.max(0, g - searchRadius); y <= g + searchRadius && y < dim; y++) {
+          for (const z of zOffsets) {
+            const color = arr[x][y][z];
 
             // will add the same color twice in the case of searchRadius === 0,
             // but that's the only color in the search space so that doesn't matter
@@ -458,11 +458,11 @@ class ColorSpace {
 
       // left green-blue plane and right green-blue plane (-r, +r)
       // z-index is pushed towards the center by one to avoid re-querying the edges on the R-G planes
-      for (let y = g - searchRadius; y <= g + searchRadius && y < dim; y++) {
-        for (let z = b - searchRadius + 1; z <= b + searchRadius - 1 && z < dim; z++) {
-          for (const x of [r - searchRadius, r + searchRadius]) {
-            const color = this.safeRead(arr, x, y, z);
-
+      for (let y = Math.max(0, g - searchRadius); y <= g + searchRadius && y < dim; y++) {
+        for (let z = Math.max(0, b - searchRadius + 1); z <= b + searchRadius - 1 && z < dim; z++) {
+          for (const x of xOffsets) {
+            const color = arr[x][y][z];
+            
             if (color && color.inUse === false) {
               availableOptions.push(color);
             }
@@ -471,10 +471,10 @@ class ColorSpace {
       }
 
       // front red-blue plane and back red-blue plane
-      for (let x = r - searchRadius + 1; x <= r + searchRadius - 1 && x < dim; x++) {
-        for (let z = b - searchRadius + 1; z <= b + searchRadius - 1 && z < dim; z++) {
-          for (const y of [g - searchRadius, g + searchRadius]) {
-            const color = this.safeRead(arr, x, y, z);
+      for (let x = Math.max(0, r - searchRadius + 1); x <= r + searchRadius - 1 && x < dim; x++) {
+        for (let z = Math.max(0, b - searchRadius + 1); z <= b + searchRadius - 1 && z < dim; z++) {
+          for (const y of yOffsets) {
+            const color = arr[x][y][z];
 
             if (color && color.inUse === false) {
               availableOptions.push(color);
