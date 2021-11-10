@@ -17,6 +17,8 @@ See it in action at https://samcarlberg.github.io/colorburst-js/
 
 Colorburst renders about 30,000-60,000 pixels per second on a 2020 M1 Macbook Air, depending on image resolution. Higher resolutions render at a slower rate. Aspect ratios near 1 also render slower due to a large boundary existing for more time during processing (eg 4096x4096 renders nearly twice as slowly as 16384x1024, despite having the same number of pixels).
 
+Chromium-based browsers such as Chrome and Edge are recommended for faster processing times.
+
 #### Common Render Times
 
 | Resolution | Pixel Count | Approximate Render Time |
