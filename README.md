@@ -7,7 +7,7 @@ Procedurally generate bursts of color!
 ![img](img/colorburst-512x512.gif)
 
 Original inspiration from
-https://theomg.github.io/omnichroma
+https://theomg.github.io/omnichroma (which has been relocated to https://sophmrs.github.io/omnichroma/)
 
 
 See it in action at https://samcarlberg.github.io/colorburst-js/
