@@ -314,8 +314,7 @@ class Renderer {
 
     if (xy !== null) {
       const newAnchor = new Anchor(xy, color);
-      if (newAnchor.hasNeighbors() || isOpen(xy)) {
-        removeElement(this.anchors, newAnchor);
+      if (newAnchor.hasNeighbors()) {
         this.anchors.push(newAnchor);
       }
       setColor(xy, color);
