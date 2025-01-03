@@ -24,6 +24,50 @@ String.prototype.hashCode = function() {
 
 var random = null;
 
+function updateURLParams() {
+  let seedInput = $('random_seed_input');
+  const seed = seedInput.value !== '' ? seedInput.value : seedInput.placeholder;
+  const width = $('width_field').value;
+  const height = $('height_field').value;
+  const startColor = $('seed_color_picker').value;
+
+  const urlParams = new URLSearchParams({
+    seed,
+    width,
+    height,
+    startColor,
+  });
+
+  const url = new URL(window.location.href);
+  urlParams.forEach((value, key) => url.searchParams.set(key, value));
+  window.history.pushState(null, '', url.toString());
+}
+
+function loadFromURLParams() {
+  const searchParams = new URLSearchParams(window.location.search);
+
+  const { canvas, _ } = canvasContext();
+  if (searchParams.has('seed')) {
+    $('random_seed_input').value = searchParams.get('seed');
+  }
+
+  if (searchParams.has('width')) {
+    canvas.width = $('width_field').value = searchParams.get('width');
+  }
+
+  if (searchParams.has('height')) {
+    canvas.height = $('height_field').value = searchParams.get('height');
+  }
+
+  if (searchParams.has('startColor')) {
+    $('seed_color_picker').value = searchParams.get('startColor');
+  }
+}
+
+window.onload = function() {
+  loadFromURLParams();
+};
+
 function start() {
   const randomSeedInput = $('random_seed_input').value;
   var randomSeed = null;
@@ -65,6 +109,8 @@ function start() {
 
   let seedAnchor = new Anchor(new XY(Math.floor((canvas.width - 1) / 2), Math.floor(canvas.height - 1)), startColor);
   setColor(seedAnchor.pos, seedAnchor.color);
+
+  updateURLParams();
 
   const renderer = new Renderer(colors, seedAnchor);
 
