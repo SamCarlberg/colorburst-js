@@ -30,12 +30,14 @@ function updateURLParams() {
   const width = $('width_field').value;
   const height = $('height_field').value;
   const startColor = $('seed_color_picker').value;
+  const useFullColorspace = $('use_full_colorspace').checked;
 
   const urlParams = new URLSearchParams({
     seed,
     width,
     height,
     startColor,
+    useFullColorspace,
   });
 
   const url = new URL(window.location.href);
@@ -61,6 +63,10 @@ function loadFromURLParams() {
 
   if (searchParams.has('startColor')) {
     $('seed_color_picker').value = searchParams.get('startColor');
+  }
+
+  if (searchParams.has('useFullColorspace')) {
+    $('use_full_colorspace').checked = searchParams.get('useFullColorspace');
   }
 }
 
@@ -263,8 +269,13 @@ function resetAndStart() {
 }
 
 function buildColors(width, height) {
-  const colorDepth = Math.ceil(Math.pow(2, (Math.log2(width * height)) / 3));
-  const colorSkip = 256 / colorDepth;
+  let colorDepth = Math.ceil(Math.pow(2, (Math.log2(width * height)) / 3));
+  let colorSkip = 256 / colorDepth;
+
+  if ($('use_full_colorspace').checked) {
+    colorDepth = 256;
+    colorSkip = 1;
+  }
 
   const matrix = new ColorSpace(colorDepth, colorSkip);
   matrix.build();
