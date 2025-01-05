@@ -113,15 +113,33 @@ function start() {
   let seedColorString = $('seed_color_picker').value;
   let startColor = colors.closest(colorStringToRgb(seedColorString));
 
-  let seedAnchor = new Anchor(new XY(Math.floor((canvas.width - 1) / 2), Math.floor(canvas.height - 1)), startColor);
-  setColor(seedAnchor.pos, seedAnchor.color);
+  const seedAnchors = [];
+
+  if ($('randomize_locations').checked) {
+    let numSeeds = Math.floor(random.nextRandom() * 10) + 1;
+    for (let i = 0; i < numSeeds; i++) {
+      let seedAnchor = new Anchor(
+          new XY(
+              Math.floor((canvas.width - 1) * random.nextRandom()),
+              Math.floor((canvas.height - 1) * random.nextRandom())
+          ),
+          getRandom(getRandom(getRandom(colors.arr)))
+      );
+      setColor(seedAnchor.pos, seedAnchor.color);
+      seedAnchors.push(seedAnchor);
+    }
+  } else {
+    let seedAnchor = new Anchor(new XY(Math.floor((canvas.width - 1) / 2), Math.floor(canvas.height - 1)), startColor);
+    setColor(seedAnchor.pos, seedAnchor.color);
+    seedAnchors.push(seedAnchor);
+  }
 
   updateURLParams();
 
-  const renderer = new Renderer(colors, seedAnchor);
+  const renderer = new Renderer(colors, seedAnchors);
 
   buildingImage = true;
-  let pixelsDrawn = 1;
+  let pixelsDrawn = seedAnchors.length;
   let elapsedTime = 0;
   const numPixels = canvas.width * canvas.height;
 
@@ -137,10 +155,11 @@ function start() {
       }
       const frameTime = Date.now() - frameStart;
       elapsedTime += frameTime;
-      const fillRate = Math.round(pixelsDrawn / (elapsedTime / 1000));
+      // const fillRate = Math.round(pixelsDrawn / (elapsedTime / 1000));
       const progress = 100 * pixelsDrawn / numPixels;
-      $('elapsed_time_text').textContent = `in ${toHHMMSS(elapsedTime)}`;
-      $('fillrate_text').textContent = `(drawing ${fillRate} pixels per second)`;
+      // $('elapsed_time_text').textContent = `in ${toHHMMSS(elapsedTime)}`;
+      $('elapsed_time_text').textContent = ``;
+      $('fillrate_text').textContent = `(${renderer.anchors.length} border pixels)`;
       $('progress_bar').value = progress;
       $('progress_text').textContent = `${Math.floor(progress)}%`;
     }
@@ -351,8 +370,8 @@ function $(id) {
 }
 
 class Renderer {
-  constructor(colorSpace, seedAnchor) {
-    this.anchors = [seedAnchor];
+  constructor(colorSpace, seedAnchors) {
+    this.anchors = [...seedAnchors];
     this.colorSpace = colorSpace;
   }
 
