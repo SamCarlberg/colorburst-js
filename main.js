@@ -31,6 +31,7 @@ function updateURLParams() {
   const height = $('height_field').value;
   const startColor = $('seed_color_picker').value;
   const useFullColorspace = $('use_full_colorspace').checked;
+  const randomStarts = $('randomize_locations').checked;
 
   const urlParams = new URLSearchParams({
     seed,
@@ -38,6 +39,7 @@ function updateURLParams() {
     height,
     startColor,
     useFullColorspace,
+    randomStarts,
   });
 
   const url = new URL(window.location.href);
@@ -66,7 +68,11 @@ function loadFromURLParams() {
   }
 
   if (searchParams.has('useFullColorspace')) {
-    $('use_full_colorspace').checked = searchParams.get('useFullColorspace');
+    $('use_full_colorspace').checked = searchParams.get('useFullColorspace') === 'true';
+  }
+
+  if (searchParams.has('randomStarts')) {
+    $('randomize_locations').checked = searchParams.get('randomStarts') === 'true';
   }
 }
 
