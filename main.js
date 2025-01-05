@@ -75,15 +75,13 @@ window.onload = function() {
 };
 
 function start() {
-  const randomSeedInput = $('random_seed_input').value;
-  var randomSeed = null;
+  let randomSeedInput = $('random_seed_input').value;
   if (randomSeedInput === '') {
     const rand = new Random(Math.floor(Math.random() * 4294967296));
-    randomSeed = rand.mulberry32(Math.floor(Math.random() * 4294967296));
-    $('random_seed_input').placeholder = randomSeed;
-  } else {
-    randomSeed = randomSeedInput.hashCode();
+    randomSeedInput = rand.mulberry32(Math.floor(Math.random() * 4294967296)).toString();
+    $('random_seed_input').placeholder = randomSeedInput;
   }
+  const randomSeed = randomSeedInput.hashCode();
 
   random = new Random(randomSeed);
 
