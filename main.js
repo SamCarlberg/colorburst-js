@@ -96,7 +96,12 @@ function start() {
     window.cancelAnimationFrame(animationHandle);
   }
 
-  $('progress_area').hidden = false
+  buildingImage = true;
+  if (buildingImage) {
+    $('progress_area').style.display = 'flex';
+  } else {
+    $('progress_area').style.display = 'none';
+  }
   $('toggle_generation').value = 'Pause';
   showColorspace = $('display_colorspace').checked;
 

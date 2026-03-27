@@ -39,4 +39,143 @@ div#main {
 
 #progress_bar {
     width: 100%;
+    height: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+#footer {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #121212;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.controls-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 40px;
+    width: 100%;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 250px;
+    text-align: left;
+}
+
+.control-group h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.1rem;
+    color: #bbb;
+    border-bottom: 1px solid #333;
+    padding-bottom: 5px;
+}
+
+.input-row, .checkbox-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.checkbox-row {
+    justify-content: flex-start;
+}
+
+.input-row label {
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+input[type="number"], input[type="text"] {
+    background: #222;
+    border: 1px solid #444;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-family: Roboto;
+    width: 80px;
+}
+
+input[type="text"] {
+    width: 120px;
+}
+
+input[type="color"] {
+    border: none;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    background: none;
+    cursor: pointer;
+}
+
+input[type="checkbox"] {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
+.actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+button, input[type="button"] {
+    background-color: #333;
+    color: #fff;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: Roboto;
+    font-weight: bold;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+button:hover, input[type="button"]:hover {
+    background-color: #444;
+}
+
+button:active, input[type="button"]:active {
+    transform: scale(0.98);
+}
+
+#draw {
+    background-color: #2e7d32;
+}
+
+#draw:hover {
+    background-color: #388e3c;
+}
+
+#download {
+    background-color: #1976d2;
+}
+
+#download:hover {
+    background-color: #1e88e5;
+}
+
+#progress_area {
+    width: 100%;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+#progress_text, #elapsed_time_text, #fillrate_text {
+    font-size: 0.85rem;
+    color: #888;
 }
