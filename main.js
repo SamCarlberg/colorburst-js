@@ -120,12 +120,12 @@ function start() {
   init3js();
 
   let seedColorString = $('seed_color_picker').value;
-  let startColor = colors.closest(colorStringToRgb(seedColorString));
 
   const seedAnchors = [];
 
   if ($('randomize_locations').checked) {
     let numSeeds = Math.floor(random.nextRandom() * 10) + 1;
+    let now = performance.now() / 1000;
     for (let i = 0; i < numSeeds; i++) {
       let seedAnchor = new Anchor(
           new XY(
@@ -134,12 +134,14 @@ function start() {
           ),
           getRandom(getRandom(getRandom(colors.arr)))
       );
-      setColor(seedAnchor.pos, seedAnchor.color);
+      setColor(seedAnchor.pos, seedAnchor.color, now);
       seedAnchors.push(seedAnchor);
     }
   } else {
+    let startColor = colors.closest(colorStringToRgb(seedColorString));
     let seedAnchor = new Anchor(new XY(Math.floor((canvas.width - 1) / 2), Math.floor(canvas.height - 1)), startColor);
-    setColor(seedAnchor.pos, seedAnchor.color);
+    let now = performance.now() / 1000;
+    setColor(seedAnchor.pos, seedAnchor.color, now);
     seedAnchors.push(seedAnchor);
   }
 
@@ -153,12 +155,13 @@ function start() {
   const numPixels = canvas.width * canvas.height;
 
   const animationCallback = () => {
+    let now = performance.now() / 1000;
     if (buildingImage && renderer.anchors.length > 0) {
       const frameStart = Date.now();
       const MAX_TIME_PER_ITERATION = 33; // millis
       let newPixelsDrawn = 0;
       while (buildingImage && renderer.anchors.length > 0 && (Date.now() - frameStart < MAX_TIME_PER_ITERATION)) {
-        renderer.renderPass();
+        renderer.renderPass(now);
         newPixelsDrawn++;
         pixelsDrawn++;
       }
@@ -177,15 +180,19 @@ function start() {
     $('colorcube_canvas').hidden = !showColorspace;
 
     if (showColorspace) {
-      colorCube.render();
-
       if (!scene) {
         init3js();
+      } else {
+        const mainCanvas = $('main_canvas');
+        if (glRenderer.domElement.width !== mainCanvas.width || glRenderer.domElement.height !== mainCanvas.height) {
+          glRenderer.setSize(mainCanvas.width, mainCanvas.height);
+          camera.aspect = mainCanvas.width / mainCanvas.height;
+          camera.updateProjectionMatrix();
+        }
       }
+      colorCube.render();
       cameraControls.update();
       glRenderer.render(scene, camera);
-    } else {
-      scene = null;
     }
     animationHandle = window.requestAnimationFrame(animationCallback);
   };
@@ -215,20 +222,27 @@ function colorStringToRgb(colorString) {
 }
 
 function init3js() {
+  const mainCanvas = $('main_canvas');
+  const width = mainCanvas.width;
+  const height = mainCanvas.height;
+
   scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(70, 1, 0.01, 256 * 4);
-  camera.position.z = 256 * 1.414;
+  camera = new THREE.PerspectiveCamera(70, width / height, 0.01, 256 * 4);
+  camera.position.z = 256 * 1.5;
+  camera.lookAt(new THREE.Vector3(0, 0, 0));
   while(scene.children.length > 0) {
     scene.remove(scene.children[0]);
   }
-  scene.add(colorCube.points);
+  scene.add(colorCube.mesh);
 
   const canvas = $('colorcube_canvas');
   glRenderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas });
-  glRenderer.setSize(512, 512);
+  glRenderer.setSize(width, height);
   glRenderer.setPixelRatio(window.devicePixelRatio);
 
   cameraControls = new THREE.TrackballControls(camera, canvas);
+  cameraControls.minDistance = 1;
+  cameraControls.maxDistance = 2000;
 }
 
 function dataURLtoBlob(dataurl) {
@@ -276,7 +290,7 @@ function plural(count) {
   return count == 1 ? "" : "s";
 }
 
-function setColor(xy, rgb) {
+function setColor(xy, rgb, now) {
   const {_, context} = canvasContext();
   context.fillStyle = rgb.toColorString();
   context.fillRect(xy.x, xy.y, 1, 1);
@@ -284,7 +298,7 @@ function setColor(xy, rgb) {
   rgb.inUse = true;
   filled[xy.x][xy.y] = true;
 
-  colorCube.addPoint(rgb);
+  colorCube.addPoint(rgb, now);
 }
 
 function resetAndStart() {
@@ -384,7 +398,7 @@ class Renderer {
     this.colorSpace = colorSpace;
   }
 
-  renderPass() {
+  renderPass(now) {
     if (this.anchors.length === 0) {
       return;
     }
@@ -402,7 +416,7 @@ class Renderer {
       if (newAnchor.hasNeighbors()) {
         this.anchors.push(newAnchor);
       }
-      setColor(xy, color);
+      setColor(xy, color, now);
     }
 
     if (anchor.hasNeighbors()) {
@@ -485,7 +499,12 @@ class ColorSpace {
    * @returns {RGB}
    */
   closest(rgb) {
-    return this.fastSearch(rgb);
+    if (this._lastClosest && !this._lastClosest.inUse && this._lastClosest.distance(rgb) < 0.01) {
+      return this._lastClosest;
+    }
+    const result = this.fastSearch(rgb);
+    this._lastClosest = result;
+    return result;
   }
 
   mapToIndex(channelValue) {
@@ -508,81 +527,106 @@ class ColorSpace {
     const g = this.mapToIndex(rgb.g);
     const b = this.mapToIndex(rgb.b);
 
-    // Search the faces of a cube centered at point (R, G, B) with radius up to colorDepth to find any unused colors;
-    // out of those colors, find the one closest to (R, G, B) and return it.  If multiple colors are the same distance,
-    // pick one of them at random.
-    for (let searchRadius = 0; searchRadius < this.colorDepth; searchRadius++) {
+    const maxRadius = this.colorDepth;
+    for (let searchRadius = 0; searchRadius < maxRadius; searchRadius++) {
       const availableOptions = [];
 
+      if (searchRadius === 0) {
+        const color = arr[r][g][b];
+        if (color && color.inUse === false) {
+          return color;
+        }
+        continue;
+      }
 
-      const xOffsets = [];
-      const yOffsets = [];
-      const zOffsets = [];
+      const rMin = r - searchRadius, rMax = r + searchRadius;
+      const gMin = g - searchRadius, gMax = g + searchRadius;
+      const bMin = b - searchRadius, bMax = b + searchRadius;
 
-      if (r - searchRadius >= 0)  { xOffsets.push(r - searchRadius); }
-      if (r + searchRadius < dim) { xOffsets.push(r + searchRadius); }
+      const rIn = rMin >= 0, rOut = rMax < dim;
+      const gIn = gMin >= 0, gOut = gMax < dim;
+      const bIn = bMin >= 0, bOut = bMax < dim;
 
-      if (g - searchRadius >= 0)  { yOffsets.push(g - searchRadius); }
-      if (g + searchRadius < dim) { yOffsets.push(g + searchRadius); }
-
-      if (b - searchRadius >= 0)  { zOffsets.push(b - searchRadius); }
-      if (b + searchRadius < dim) { zOffsets.push(b + searchRadius); }
-
-      // bottom red-green plane and top red-green plane (-b, +b)
-      for (let x = Math.max(0, r - searchRadius); x <= r + searchRadius && x < dim; x++) {
-        for (let y = Math.max(0, g - searchRadius); y <= g + searchRadius && y < dim; y++) {
-          for (const z of zOffsets) {
-            const color = arr[x][y][z];
-
-            // will add the same color twice in the case of searchRadius === 0,
-            // but that's the only color in the search space so that doesn't matter
-            if (color && color.inUse === false) {
-              availableOptions.push(color);
+      // Top and bottom faces (z = bMin, z = bMax)
+      if (bIn || bOut) {
+        const zIndices = [];
+        if (bIn) {
+          zIndices.push(bMin);
+        }
+        if (bOut) {
+          zIndices.push(bMax);
+        }
+        for (let x = Math.max(0, rMin); x <= Math.min(dim - 1, rMax); x++) {
+          for (let y = Math.max(0, gMin); y <= Math.min(dim - 1, gMax); y++) {
+            for (const z of zIndices) {
+              const color = arr[x][y][z];
+              if (color && !color.inUse) {
+                availableOptions.push(color);
+              }
             }
           }
         }
       }
 
-      // left green-blue plane and right green-blue plane (-r, +r)
-      // z-index is pushed towards the center by one to avoid re-querying the edges on the R-G planes
-      for (let y = Math.max(0, g - searchRadius); y <= g + searchRadius && y < dim; y++) {
-        for (let z = Math.max(0, b - searchRadius + 1); z <= b + searchRadius - 1 && z < dim; z++) {
-          for (const x of xOffsets) {
-            const color = arr[x][y][z];
-
-            if (color && color.inUse === false) {
-              availableOptions.push(color);
+      // Left and right faces (x = rMin, x = rMax)
+      if (rIn || rOut) {
+        const xIndices = [];
+        if (rIn) {
+          xIndices.push(rMin);
+        }
+        if (rOut) {
+          xIndices.push(rMax);
+        }
+        for (let y = Math.max(0, gMin); y <= Math.min(dim - 1, gMax); y++) {
+          for (let z = Math.max(0, bMin + 1); z <= Math.min(dim - 1, bMax - 1); z++) {
+            for (const x of xIndices) {
+              const color = arr[x][y][z];
+              if (color && !color.inUse) {
+                availableOptions.push(color);
+              }
             }
           }
         }
       }
 
-      // front red-blue plane and back red-blue plane
-      for (let x = Math.max(0, r - searchRadius + 1); x <= r + searchRadius - 1 && x < dim; x++) {
-        for (let z = Math.max(0, b - searchRadius + 1); z <= b + searchRadius - 1 && z < dim; z++) {
-          for (const y of yOffsets) {
-            const color = arr[x][y][z];
-
-            if (color && color.inUse === false) {
-              availableOptions.push(color);
+      // Front and back faces (y = gMin, y = gMax)
+      if (gIn || gOut) {
+        const yIndices = [];
+        if (gIn) {
+          yIndices.push(gMin);
+        }
+        if (gOut) {
+          yIndices.push(gMax);
+        }
+        for (let x = Math.max(0, rMin + 1); x <= Math.min(dim - 1, rMax - 1); x++) {
+          for (let z = Math.max(0, bMin + 1); z <= Math.min(dim - 1, bMax - 1); z++) {
+            for (const y of yIndices) {
+              const color = arr[x][y][z];
+              if (color && !color.inUse) {
+                availableOptions.push(color);
+              }
             }
           }
         }
       }
 
-      if (availableOptions.length === 1) {
-        return availableOptions[0];
-      } else if (availableOptions.length > 1) {
-        let closestDistance = null;
+      if (availableOptions.length > 0) {
+        if (availableOptions.length === 1) {
+          return availableOptions[0];
+        }
+        let closestDistanceSq = Infinity;
         let closestOptions = [];
 
-        for (const option of availableOptions) {
-          const distance = option.distance(rgb);
-          if (!closestDistance || distance < closestDistance) {
-            closestDistance = distance;
-            closestOptions = [];
-            closestOptions.push(option);
-          } else if (Math.abs(distance - closestDistance) < 0.01) { // epsilon comparison
+        for (let i = 0, len = availableOptions.length; i < len; i++) {
+          const option = availableOptions[i];
+          const dr = option.r - rgb.r;
+          const dg = option.g - rgb.g;
+          const db = option.b - rgb.b;
+          const distanceSq = dr * dr + dg * dg + db * db;
+          if (distanceSq < closestDistanceSq - 0.01) {
+            closestDistanceSq = distanceSq;
+            closestOptions = [option];
+          } else if (Math.abs(distanceSq - closestDistanceSq) < 0.01) {
             closestOptions.push(option);
           }
         }
@@ -669,12 +713,10 @@ class RGB extends Equatable {
    * @returns {number}
    */
   distance(other) {
-    return Math.sqrt(
-      Math.pow((this.r - other.r), 2) +
-      Math.pow((this.g - other.g), 2) +
-      Math.pow((this.b - other.b), 2)
-    );
-    // return deltaE(rgb2lab([this.r, this.g, this.b]), rgb2lab([other.r, other.g, other.b]));
+    const dr = this.r - other.r;
+    const dg = this.g - other.g;
+    const db = this.b - other.b;
+    return Math.sqrt(dr * dr + dg * dg + db * db);
   }
 }
 

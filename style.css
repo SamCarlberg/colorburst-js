@@ -32,9 +32,11 @@ div#main {
     text-decoration: none;
 }
 
-#main_canvas {
+#main_canvas, #colorcube_canvas {
     background: black;
     max-width: 100%;
+    display: block;
+    margin: 0 auto;
 }
 
 #progress_bar {
